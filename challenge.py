@@ -76,18 +76,25 @@ def get_invoices(page_data, tulos_file, website):
                 continue
 
             link = cells[3].find("a")["href"]
-            invoice_number, invoice_date, company_name, total_due = check_invoice(link, invoice_number_counter, website)
+            text = extract_data_from_picture(link, invoice_number_counter, website)
+            invoice_number, invoice_date, company_name, total_due = find_keywords(text)
             write_csv_file(invoice_id, due_date_str, invoice_number, invoice_date, company_name, total_due, tulos_file)
 
-def check_invoice(href, invoice_number_value, website):
+def download_invoice(href, invoice_number_value, website):
     url = f"{website}{href}"
     response = requests.get(url)
     picture = f"output/screenshots/{invoice_number_value}.png"
     with open(picture, "wb") as file:
         file.write(response.content)
+    return picture
+
+def extract_data_from_picture(href, invoice_number_value, website):
+    picture = download_invoice(href, invoice_number_value, website)
     img = cv2.imread(picture)
     text = pytesseract.image_to_string(img)
-
+    return text
+    
+def find_keywords(text):
     company_name_match = company_name(text)
     if company_name_match:
         company_name_value = company_name_match.group()
