@@ -8,6 +8,7 @@ import requests
 import re
 import csv
 from datetime import datetime
+from company import create_Aenean_LLC, create_Sit_Amet_Corp
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
@@ -87,41 +88,21 @@ def check_invoice(href, invoice_number_value, website):
     img = cv2.imread(picture)
     text = pytesseract.image_to_string(img)
 
-    # Extract specific keywords using regular expressions
-
-    invoice_number_match = invoice_number(text)
-    invoice_date_match = invoice_date(text)
     company_name_match = company_name(text)
-    total_due_match = total_due(text)
-    
-    if invoice_number_match:
-        invoice_number_value = invoice_number_match.group(1)
-    
-    if invoice_date_match:
-        invoice_date_value = invoice_date_match.group(1)
-        invoice_date_value = datetime.strptime(invoice_date_value, "%Y-%m-%d").strftime("%d-%m-%Y")
-    
     if company_name_match:
         company_name_value = company_name_match.group()
-    
-    if total_due_match:
-        total_due_value = total_due_match.group(1)
+        if company_name_value == "Aenean LLC":
+            llc = create_Aenean_LLC(text)
+            invoice_number_value = llc.get_number()
+            invoice_date_value = llc.get_date()
+            total_due_value = llc.get_total_due()
+        elif company_name_value == "Sit Amet Corp":
+            amet = create_Sit_Amet_Corp(text)
+            invoice_number_value = amet.get_number()
+            invoice_date_value = amet.get_date()
+            total_due_value = amet.get_total_due()
+
     return invoice_number_value, invoice_date_value, company_name_value, total_due_value
-
-
-def invoice_number(text):
-    if re.search(r'Invoice #(\d+)', text):
-        return re.search(r'Invoice #(\d+)', text)
-    if re.search(r'# (\d+)', text):
-        return re.search(r'# (\d+)', text)
-    return None
-    
-def invoice_date(text):
-    if re.search(r'(\d{4}-\d{2}-\d{2})', text):
-        return re.search(r'(\d{4}-\d{2}-\d{2})', text)
-    if re.search(r'Date: (\w+ \d{2}, \d{4})', text):
-        return re.search(r'Date: (\w+ \d{2}, \d{4})', text)
-    return None
 
 def company_name(text):
     match = re.search("Aenean LLC", text)
@@ -130,13 +111,6 @@ def company_name(text):
     match = re.search("Sit Amet Corp", text)
     if match:
         return match
-    return None
-
-def total_due(text):
-    if re.search(r'Total (\d+\.\d{2})', text):
-        return re.search(r'Total (\d+\.\d{2})', text)
-    if re.search(r'Total \$([\d,]+\.\d{2})', text):
-        return re.search(r'Total \$([\d,]+\.\d{2})', text)
     return None
 
 def write_csv_file(invoice_id, due_date_str, invoice_number, invoice_date, company_name, total_due, tulos_file):
