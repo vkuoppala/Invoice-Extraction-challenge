@@ -17,19 +17,24 @@ def challenge():
     TULOS_FILE = "output.csv"
     WEBSITE = "https://rpachallengeocr.azurewebsites.net/"
     clear_csv_file(TULOS_FILE)
-    invoice_number = 0
     open_website(WEBSITE)
     start()
     sleep(0.05)
-    invoice_number = get_invoices(invoice_number, TULOS_FILE, WEBSITE)
+    page_data = []
+    data = get_page_information()
+    page_data.append(get_table_data(data))
     while next_page():
-        invoice_number = get_invoices(invoice_number, TULOS_FILE, WEBSITE)
+        data = get_page_information()
+        page_data.append(get_table_data(data))
+    get_invoices(page_data, TULOS_FILE, WEBSITE)
     submit(TULOS_FILE)
     sleep(15)
 
-def submit(file_path):
-    page = browser.page()
-    page.locator(selector="input[type='file']").set_input_files(file_path)
+def clear_csv_file(file_path):
+    """Clear the contents of the CSV file."""
+    with open(file_path, 'w', newline="") as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(["ID", "DueDate", "InvoiceNo", "InvoiceDate", "CompanyName", "TotalDue"])
 
 def open_website(url):
     browser.goto(url)
@@ -38,35 +43,11 @@ def start():
     page = browser.page()
     page.click("id=start")
 
-def get_invoices(invoice_number_counter, tulos_file, website):
+def get_page_information():
     page = browser.page()
     html_page = page.content()   
     soup = BeautifulSoup(html_page, "html.parser")
-    rows = soup.find_all("tr", class_=["odd", "even"])
-    
-    for row in rows:
-        cells = row.find_all("td")
-        if len(cells) < 4:
-            continue
-
-        invoice_id = cells[1].text.strip()
-        due_date_str = cells[2].text.strip()
-        due_date = datetime.strptime(due_date_str, "%d-%m-%Y")
-        if due_date > datetime.today():
-            continue
-
-        link = cells[3].find("a")["href"]
-        if link:
-            invoice_number_counter += 1
-            invoice_number, invoice_date, company_name, total_due = check_invoice(link, invoice_number_counter, website)
-            write_csv_file(invoice_id, due_date_str, invoice_number, invoice_date, company_name, total_due, tulos_file)
-    return invoice_number_counter
-
-def clear_csv_file(file_path):
-    """Clear the contents of the CSV file."""
-    with open(file_path, 'w', newline="") as csvfile:
-        csvwriter = csv.writer(csvfile)
-        csvwriter.writerow(["ID", "DueDate", "InvoiceNo", "InvoiceDate", "CompanyName", "TotalDue"])
+    return soup
 
 def next_page():
     page = browser.page()
@@ -75,6 +56,27 @@ def next_page():
         element.click()
         return True
     return False
+
+def get_table_data(soup):
+    return soup.find_all("tr", class_=["odd", "even"])
+
+def get_invoices(page_data, tulos_file, website):  
+    for table in page_data:
+        for row in table:
+            cells = row.find_all("td")
+            if len(cells) < 4:
+                continue
+            
+            invoice_number_counter = cells[0].text.strip()
+            invoice_id = cells[1].text.strip()
+            due_date_str = cells[2].text.strip()
+            due_date = datetime.strptime(due_date_str, "%d-%m-%Y")
+            if due_date > datetime.today():
+                continue
+
+            link = cells[3].find("a")["href"]
+            invoice_number, invoice_date, company_name, total_due = check_invoice(link, invoice_number_counter, website)
+            write_csv_file(invoice_id, due_date_str, invoice_number, invoice_date, company_name, total_due, tulos_file)
 
 def check_invoice(href, invoice_number_value, website):
     url = f"{website}{href}"
@@ -141,3 +143,7 @@ def write_csv_file(invoice_id, due_date_str, invoice_number, invoice_date, compa
     with open(tulos_file, "a", newline="") as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow([invoice_id, due_date_str, invoice_number, invoice_date, company_name, total_due])
+
+def submit(file_path):
+    page = browser.page()
+    page.locator(selector="input[type='file']").set_input_files(file_path)
