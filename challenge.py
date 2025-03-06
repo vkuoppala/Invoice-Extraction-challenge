@@ -28,7 +28,7 @@ def clear_csv_file():
     """Clear the contents of the CSV file."""
     with open(TULOS_FILE, 'w', newline="") as csvfile:
         csvwriter = csv.writer(csvfile)
-        csvwriter.writerow([HEADER])
+        csvwriter.writerow(HEADER)
 
 def open_website():
     """Open the challenge website."""
@@ -55,7 +55,7 @@ def next_page():
         return True
     return False
 
-def get_table_data(soup):
+def get_table_data(soup): # korjaa -> unittesteja
     """Extracts the table data from the page."""
     return soup.find_all("tr", class_=["odd", "even"])
 
@@ -121,16 +121,17 @@ def download_invoice(href, invoice_number_value):
 def extract_data_from_picture(picture):
     """Extracts the text from the invoice document."""
     img = cv2.imread(picture)
-    if not img:
+    if img is None:
         return None
     text = pytesseract.image_to_string(img)
     return text
     
-def write_to_csv_file(invoice_id, due_date_str, invoice_number, invoice_date, company_name, total_due):
+def write_to_csv_file(extracted_data):
     """Writes the extracted data to the CSV file."""
     with open(TULOS_FILE, "a", newline="") as csvfile:
         csvwriter = csv.writer(csvfile)
-        csvwriter.writerow([invoice_id, due_date_str, invoice_number, invoice_date, company_name, total_due])
+        for row in extracted_data:
+            csvwriter.writerow(row)
 
 def submit():
     """Submits the CSV file."""

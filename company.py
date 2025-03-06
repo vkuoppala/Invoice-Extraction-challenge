@@ -2,6 +2,9 @@ import re
 from datetime import datetime
 
 class Company():
+
+    company_list = []
+
     def __init__(self, company_name, invoice_number, invoice_date, total_due):
         self.number = invoice_number
         self.date = invoice_date
@@ -34,6 +37,9 @@ class Company():
     def set_total_due(self, total_due):
         self.total_due = total_due
     
+    def get_company_list(self):
+        return Company.company_list
+    
     @classmethod
     def create_from_text(cls, text):
         raise NotImplementedError("This method should be implemented in the child class.")
@@ -44,6 +50,7 @@ class AeneanLLC(Company):
         self.number = None
         self.date = None
         self.total_due = None
+        Company.company_list.append(self)
 
     @classmethod
     def get_date(cls):
@@ -67,6 +74,7 @@ class SitAmetCorp(Company):
         self.number = None
         self.date = None
         self.total_due = None
+        Company.company_list.append(self)
 
     @classmethod
     def get_date(cls):
@@ -85,10 +93,10 @@ class SitAmetCorp(Company):
         return instance
 
 def find_keywords(text):
-    llc = AeneanLLC()
-    amet = SitAmetCorp()
-    company_objects = [llc, amet]
-    for company in company_objects:
+    all_companies = Company(None, None, None, None)
+    AeneanLLC()
+    SitAmetCorp()
+    for company in all_companies.get_company_list():
         company_name_match = re.search(company.get_company_name(), text)
         if company_name_match:
             company = company.create_from_text(text)
