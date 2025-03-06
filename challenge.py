@@ -33,19 +33,23 @@ def clear_csv_file(file_path):
         csvwriter.writerow(["ID", "DueDate", "InvoiceNo", "InvoiceDate", "CompanyName", "TotalDue"])
 
 def open_website(url):
+    """Open the challenge website."""
     browser.goto(url)
 
 def start():
+    """Presses start button."""
     page = browser.page()
     page.click("id=start")
 
 def get_page_information():
+    """Using BeautifulSoup to parse the page content."""
     page = browser.page()
     html_page = page.content()   
     soup = BeautifulSoup(html_page, "html.parser")
     return soup
 
 def next_page():
+    """Clicks the next table page button, if available."""
     page = browser.page()
     element = page.query_selector(f"[class='paginate_button next']")
     if element:
@@ -54,9 +58,11 @@ def next_page():
     return False
 
 def get_table_data(soup):
+    """Extracts the table data from the page."""
     return soup.find_all("tr", class_=["odd", "even"])
 
 def gather_page_data():
+    """Gathers all the data from the pages into one list."""
     page_data = []
     data = get_page_information()
     page_data.append(get_table_data(data))
@@ -66,6 +72,7 @@ def gather_page_data():
     return page_data
 
 def information_handler(page_data, tulos_file, website):  
+    """Acts as a umbrella function for the data extraction and writing to CSV."""
     good_data = drop_unwanted_rows(page_data)
     if good_data is None:
         return
@@ -77,6 +84,7 @@ def information_handler(page_data, tulos_file, website):
         write_to_csv_file(cells[1].text.strip(), cells[2].text.strip(), invoice_number, invoice_date, company_name, total_due, tulos_file)
 
 def drop_unwanted_rows(page_data):
+    """Drops rows that are not needed to process."""
     good_files = []
     for table in page_data:
         for row in table:
@@ -91,6 +99,7 @@ def drop_unwanted_rows(page_data):
     return good_files
 
 def download_invoice(href, invoice_number_value, website):
+    """Downloads the invoice document."""
     url = f"{website}{href}"
     response = requests.get(url)
     picture = f"output/screenshots/{invoice_number_value}.png"
@@ -99,15 +108,18 @@ def download_invoice(href, invoice_number_value, website):
     return picture
 
 def extract_data_from_picture(picture):
+    """Extracts the text from the invoice document."""
     img = cv2.imread(picture)
     text = pytesseract.image_to_string(img)
     return text
     
 def write_to_csv_file(invoice_id, due_date_str, invoice_number, invoice_date, company_name, total_due, tulos_file):
+    """Writes the extracted data to the CSV file."""
     with open(tulos_file, "a", newline="") as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow([invoice_id, due_date_str, invoice_number, invoice_date, company_name, total_due])
 
 def submit(file_path):
+    """Submits the CSV file."""
     page = browser.page()
     page.locator(selector="input[type='file']").set_input_files(file_path)
