@@ -9,7 +9,7 @@ import re
 import csv
 from datetime import datetime
 from company import find_keywords
-from _config import TULOS_FILE, WEBSITE, TESSERACT_CMD
+from _config import TULOS_FILE, WEBSITE, TESSERACT_CMD, HEADER
 
 pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
 @task
@@ -28,7 +28,7 @@ def clear_csv_file():
     """Clear the contents of the CSV file."""
     with open(TULOS_FILE, 'w', newline="") as csvfile:
         csvwriter = csv.writer(csvfile)
-        csvwriter.writerow(["ID", "DueDate", "InvoiceNo", "InvoiceDate", "CompanyName", "TotalDue"])
+        csvwriter.writerow([HEADER])
 
 def open_website():
     """Open the challenge website."""
