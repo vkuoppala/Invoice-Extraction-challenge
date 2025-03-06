@@ -27,7 +27,7 @@ def challenge():
     while next_page():
         data = get_page_information()
         page_data.append(get_table_data(data))
-    get_invoices(page_data, TULOS_FILE, WEBSITE)
+    information_handler(page_data, TULOS_FILE, WEBSITE)
     submit(TULOS_FILE)
     sleep(15)
 
@@ -61,7 +61,7 @@ def next_page():
 def get_table_data(soup):
     return soup.find_all("tr", class_=["odd", "even"])
 
-def get_invoices(page_data, tulos_file, website):  
+def information_handler(page_data, tulos_file, website):  
     for table in page_data:
         for row in table:
             cells = row.find_all("td")
@@ -76,9 +76,10 @@ def get_invoices(page_data, tulos_file, website):
                 continue
 
             link = cells[3].find("a")["href"]
-            text = extract_data_from_picture(link, invoice_number_counter, website)
+            picture = download_invoice(link, invoice_number_counter, website)
+            text = extract_data_from_picture(picture)
             invoice_number, invoice_date, company_name, total_due = find_keywords(text)
-            write_csv_file(invoice_id, due_date_str, invoice_number, invoice_date, company_name, total_due, tulos_file)
+            write_to_csv_file(invoice_id, due_date_str, invoice_number, invoice_date, company_name, total_due, tulos_file)
 
 def download_invoice(href, invoice_number_value, website):
     url = f"{website}{href}"
@@ -88,30 +89,29 @@ def download_invoice(href, invoice_number_value, website):
         file.write(response.content)
     return picture
 
-def extract_data_from_picture(href, invoice_number_value, website):
-    picture = download_invoice(href, invoice_number_value, website)
+def extract_data_from_picture(picture):
     img = cv2.imread(picture)
     text = pytesseract.image_to_string(img)
     return text
     
 def find_keywords(text):
-    company_name_match = company_name(text)
+    company_name_match = find_company_name(text)
     if company_name_match:
-        company_name_value = company_name_match.group()
-        if company_name_value == "Aenean LLC":
+        company_name = company_name_match.group()
+        if company_name == "Aenean LLC":
             llc = create_Aenean_LLC(text)
-            invoice_number_value = llc.get_number()
-            invoice_date_value = llc.get_date()
-            total_due_value = llc.get_total_due()
-        elif company_name_value == "Sit Amet Corp":
+            invoice_number = llc.get_number()
+            invoice_date = datetime.strptime(llc.get_date(), "%Y-%m-%d").strftime("%d-%m-%Y")
+            total_due = llc.get_total_due()
+        elif company_name == "Sit Amet Corp":
             amet = create_Sit_Amet_Corp(text)
-            invoice_number_value = amet.get_number()
-            invoice_date_value = amet.get_date()
-            total_due_value = amet.get_total_due()
+            invoice_number = amet.get_number()
+            invoice_date = datetime.strptime(amet.get_date(), "%b-%d-%Y").strftime("%d-%m-%Y")
+            total_due = amet.get_total_due()
 
-    return invoice_number_value, invoice_date_value, company_name_value, total_due_value
+    return invoice_number, invoice_date, company_name, total_due
 
-def company_name(text):
+def find_company_name(text):
     match = re.search("Aenean LLC", text)
     if match:
         return match
@@ -120,7 +120,7 @@ def company_name(text):
         return match
     return None
 
-def write_csv_file(invoice_id, due_date_str, invoice_number, invoice_date, company_name, total_due, tulos_file):
+def write_to_csv_file(invoice_id, due_date_str, invoice_number, invoice_date, company_name, total_due, tulos_file):
     with open(tulos_file, "a", newline="") as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow([invoice_id, due_date_str, invoice_number, invoice_date, company_name, total_due])

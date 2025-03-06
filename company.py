@@ -15,7 +15,6 @@ class Company:
         return self.number
     
     def get_date(self):
-        self.date = datetime.strptime(self.date, "%Y-%m-%d").strftime("%d-%m-%Y")
         return self.date
     
     def get_company_name(self):
