@@ -21,12 +21,7 @@ def challenge():
     open_website(WEBSITE)
     start()
     sleep(0.05)
-    page_data = []
-    data = get_page_information()
-    page_data.append(get_table_data(data))
-    while next_page():
-        data = get_page_information()
-        page_data.append(get_table_data(data))
+    page_data = gather_page_data()
     information_handler(page_data, TULOS_FILE, WEBSITE)
     submit(TULOS_FILE)
     sleep(5)
@@ -60,6 +55,15 @@ def next_page():
 
 def get_table_data(soup):
     return soup.find_all("tr", class_=["odd", "even"])
+
+def gather_page_data():
+    page_data = []
+    data = get_page_information()
+    page_data.append(get_table_data(data))
+    while next_page():
+        data = get_page_information()
+        page_data.append(get_table_data(data))
+    return page_data
 
 def information_handler(page_data, tulos_file, website):  
     good_data = drop_unwanted_rows(page_data)
