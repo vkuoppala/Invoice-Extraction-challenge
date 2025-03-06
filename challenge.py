@@ -8,7 +8,7 @@ import requests
 import re
 import csv
 from datetime import datetime
-from company import create_Aenean_LLC, create_Sit_Amet_Corp
+from company import find_keywords
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
@@ -29,7 +29,7 @@ def challenge():
         page_data.append(get_table_data(data))
     information_handler(page_data, TULOS_FILE, WEBSITE)
     submit(TULOS_FILE)
-    sleep(15)
+    sleep(5)
 
 def clear_csv_file(file_path):
     """Clear the contents of the CSV file."""
@@ -99,32 +99,6 @@ def extract_data_from_picture(picture):
     text = pytesseract.image_to_string(img)
     return text
     
-def find_keywords(text):
-    company_name_match = find_company_name(text)
-    if company_name_match:
-        company_name = company_name_match.group()
-        if company_name == "Aenean LLC":
-            llc = create_Aenean_LLC(text)
-            invoice_number = llc.get_number()
-            invoice_date = datetime.strptime(llc.get_date(), "%Y-%m-%d").strftime("%d-%m-%Y")
-            total_due = llc.get_total_due()
-        elif company_name == "Sit Amet Corp":
-            amet = create_Sit_Amet_Corp(text)
-            invoice_number = amet.get_number()
-            invoice_date = datetime.strptime(amet.get_date(), "%b-%d-%Y").strftime("%d-%m-%Y")
-            total_due = amet.get_total_due()
-
-    return invoice_number, invoice_date, company_name, total_due
-
-def find_company_name(text):
-    match = re.search("Aenean LLC", text)
-    if match:
-        return match
-    match = re.search("Sit Amet Corp", text)
-    if match:
-        return match
-    return None
-
 def write_to_csv_file(invoice_id, due_date_str, invoice_number, invoice_date, company_name, total_due, tulos_file):
     with open(tulos_file, "a", newline="") as csvfile:
         csvwriter = csv.writer(csvfile)
