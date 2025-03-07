@@ -42,14 +42,14 @@ def extract_data(data):
         text = extract_data_from_picture(picture)
         if text is None:
             continue
-        invoice_number, invoice_date, company_name, total_due = find_keywords(text)
+        company_data = find_keywords(text)
         relevant_data.append(InvoiceData(
             invoice_id=cells.invoice_id,
             due_date=cells.due_date,
-            invoice_number=invoice_number,
-            invoice_date=invoice_date,
-            company_name=company_name,
-            total_due=total_due))
+            invoice_number=company_data.invoice_number,
+            invoice_date=company_data.invoice_date,
+            company_name=company_data.company_name,
+            total_due=company_data.total_due))
     return relevant_data
 
 def extract_data_from_picture(picture):

@@ -16,3 +16,10 @@ class InvoiceData:
 	invoice_date: str
 	company_name: str
 	total_due: str
+	
+@dataclass
+class CompanyData:
+	company_name: str
+	invoice_number: str
+	invoice_date: str
+	total_due: str

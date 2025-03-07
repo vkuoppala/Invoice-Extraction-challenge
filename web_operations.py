@@ -3,7 +3,6 @@ from _config import WEBSITE, TULOS_FILE
 from bs4 import BeautifulSoup
 from data_storage_classes import RelevantPageData
 import requests
-import os
 
 def open_website():
     """Open the challenge website."""
