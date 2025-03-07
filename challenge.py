@@ -5,13 +5,13 @@ from bs4 import BeautifulSoup
 import pytesseract
 import cv2
 import requests
-import re
 import csv
 from datetime import datetime
 from company import find_keywords
 from _config import TULOS_FILE, WEBSITE, TESSERACT_CMD, HEADER
 
 pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
+
 @task
 def challenge():
     """Invoice extraction challenge."""
@@ -41,10 +41,20 @@ def start():
 
 def get_page_information():
     """Using BeautifulSoup to parse the page content."""
+    many_tables = []
     page = browser.page()
     html_page = page.content()   
     soup = BeautifulSoup(html_page, "html.parser")
-    return soup
+    table = soup.find_all("tr", class_=["odd", "even"]) # muista return
+    for rows in table:
+        cells = rows.find_all("td")
+        many_cells = {}
+        many_cells["id"] = cells[0].text.strip()
+        many_cells["invoice_number"] = cells[1].text.strip()
+        many_cells["due_date"] = cells[2].text.strip()
+        many_cells["invoice"] = cells[3].find("a")["href"]
+        many_tables.append(many_cells)
+    return many_tables
 
 def next_page():
     """Clicks the next table page button, if available."""
@@ -55,56 +65,49 @@ def next_page():
         return True
     return False
 
-def get_table_data(soup): # korjaa -> unittesteja
-    """Extracts the table data from the page."""
-    return soup.find_all("tr", class_=["odd", "even"])
-
 def gather_page_data():
     """Gathers all the data from the pages into one list."""
     page_data = []
-    data = get_page_information()
-    page_data.append(get_table_data(data))
+    for dict in get_page_information():
+        page_data.append(dict)
     while next_page():
-        data = get_page_information()
-        page_data.append(get_table_data(data))
-    return page_data
-
-def information_handler(page_data):  
-    """Acts as a umbrella function for the data extraction and writing to CSV."""
+        for dict in get_page_information():
+            page_data.append(dict)
     good_data = drop_unwanted_rows(page_data)
     if good_data is None:
         return
-    extracted_data = extract_data(good_data)
-    write_to_csv_file(extracted_data)
+    return good_data
 
 def drop_unwanted_rows(page_data):
     """Drops rows that are not needed to process."""
     good_files = []
-    for table in page_data:
-        for row in table:
-            cells = row.find_all("td")
-            if len(cells) < 4:
-                continue
-            due_date_str = cells[2].text.strip()
-            due_date = datetime.strptime(due_date_str, "%d-%m-%Y")
-            if due_date > datetime.today():
-                continue
-            good_files.append(row)
+    for cells in page_data:
+        if len(cells) < 4:
+            continue
+        due_date_str = cells["due_date"]
+        due_date = datetime.strptime(due_date_str, "%d-%m-%Y")
+        if due_date > datetime.today():
+            continue
+        good_files.append(cells)
     return good_files
+
+def information_handler(good_data):  
+    """Acts as a umbrella function for the data extraction and writing to CSV."""
+    extracted_data = extract_data(good_data)
+    write_to_csv_file(extracted_data)
 
 def extract_data(data):
     """Extracts relevant data from the tables."""
     relevant_data = []
-    for row in data:
-        cells = row.find_all("td")
-        picture = download_invoice(cells[3].find("a")["href"], cells[0].text.strip())
+    for cells in data:
+        picture = download_invoice(cells["invoice"], cells["id"])
         if picture is None:
             continue
         text = extract_data_from_picture(picture)
         if text is None:
             continue
         invoice_number, invoice_date, company_name, total_due = find_keywords(text)
-        relevant_data.append ((cells[1].text.strip(), cells[2].text.strip(), invoice_number, invoice_date, company_name, total_due))
+        relevant_data.append ((cells["invoice_number"], cells["due_date"], invoice_number, invoice_date, company_name, total_due))
     return relevant_data
 
 def download_invoice(href, invoice_number_value):
