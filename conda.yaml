@@ -18,5 +18,3 @@ dependencies:
     - rpaframework==29.0.0        # https://rpaframework.org/releasenotes.html
     - robocorp==2.1.2             # https://pypi.org/project/robocorp
     - robocorp-browser==2.3.4     # https://pypi.org/project/robocorp-browser
-  # - post_install:
-    # - cmd.exe /c "curl -L -o tesseract-installer.exe https://github.com/UB-Mannheim/tesseract/wiki/tesseract-ocr-w64-setup-v5.0.0-alpha.20201127.exe && tesseract-installer.exe /SILENT"
