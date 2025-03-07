@@ -6,6 +6,7 @@ import pytesseract
 import cv2
 import requests
 import csv
+import os
 from datetime import datetime
 from company import find_keywords
 from _config import TULOS_FILE, WEBSITE, TESSERACT_CMD, HEADER
@@ -45,7 +46,7 @@ def get_page_information():
     page = browser.page()
     html_page = page.content()   
     soup = BeautifulSoup(html_page, "html.parser")
-    table = soup.find_all("tr", class_=["odd", "even"]) # muista return
+    table = soup.find_all("tr", class_=["odd", "even"])
     for rows in table:
         cells = rows.find_all("td")
         many_cells = {}
