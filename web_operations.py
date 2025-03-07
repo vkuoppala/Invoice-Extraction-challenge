@@ -33,33 +33,33 @@ def html_parser_to_dict(html_page):
     soup = BeautifulSoup(html_page, "html.parser")
     table = soup.find_all("tr", class_=["odd", "even"])
     for rows in table:
-        cells = rows.find_all("td")
-        many_cells = RelevantPageData(
-            page_id=cells[0].text.strip(),
-            invoice_id=cells[1].text.strip(),
-            due_date=cells[2].text.strip(),
-            invoice=cells[3].find("a")["href"],
-            length=len(cells)
-        )
-        many_tables.append(many_cells)
+        many_tables.append(store_page_data_to_storage(rows))
     return many_tables
+
+def store_page_data_to_storage(data):
+    """Stores the page data to a storage."""
+    cells = data.find_all("td")
+    many_cells = RelevantPageData(
+        page_id=cells[0].text.strip(),
+        invoice_id=cells[1].text.strip(),
+        due_date=cells[2].text.strip(),
+        invoice=cells[3].find("a")["href"],
+        length=len(cells)
+    )
+    return many_cells
 
 def get_page():
     page = browser.page()
     html_page = page.content()
     return html_page
 
-def download_invoice(href, invoice_number_value):
+def download_invoice_data(href):
     """Downloads the invoice document."""
     url = f"{WEBSITE}{href}"
     response = requests.get(url)
     if response.status_code != 200:
         return None
-    directory = "output/screenshots"
-    picture = f"{directory}/{invoice_number_value}.png"
-    with open(picture, "wb") as file:
-        file.write(response.content)
-    return picture
+    return response.content
 
 def main():
     """Main function."""

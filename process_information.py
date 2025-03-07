@@ -1,5 +1,5 @@
 from datetime import datetime
-from web_operations import get_page, html_parser_to_dict, next_page, download_invoice
+from web_operations import get_page, html_parser_to_dict, next_page, download_invoice_data
 from company import find_keywords
 from _config import TESSERACT_CMD
 from data_storage_classes import InvoiceData
@@ -36,7 +36,7 @@ def extract_data(data):
     """Extracts relevant data from the tables."""
     relevant_data = []
     for cells in data:
-        picture = download_invoice(cells.invoice, cells.page_id)
+        picture = create_picture(cells.invoice, cells.page_id)
         if picture is None:
             continue
         text = extract_data_from_picture(picture)
@@ -51,6 +51,15 @@ def extract_data(data):
             company_name=company_data.company_name,
             total_due=company_data.total_due))
     return relevant_data
+
+def create_picture(href, invoice_number_value):
+    """Downloads the invoice document."""
+    directory = "output/screenshots"
+    picture = f"{directory}/{invoice_number_value}.png"
+    with open(picture, "wb") as file:
+        file.write(download_invoice_data(href))
+    return picture
+
 
 def extract_data_from_picture(picture):
     """Extracts the text from the invoice document."""
