@@ -3,7 +3,6 @@ import csv
 
 def create_csv_file(extracted_data):
     """Writes the extracted data to the CSV file."""
-    HEADER = "ID", "DueDate", "InvoiceNo", "InvoiceDate", "CompanyName", "TotalDue"
     with open(TULOS_FILE, "w", newline="") as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow(HEADER)
