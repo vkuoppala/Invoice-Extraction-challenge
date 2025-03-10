@@ -1,4 +1,4 @@
-from _config import TULOS_FILE
+from _config import TULOS_FILE, HEADER
 import csv
 
 def create_csv_file(extracted_data):
